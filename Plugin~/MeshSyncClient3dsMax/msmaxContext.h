@@ -166,8 +166,19 @@ private:
         ms::TransformPtr dst;
 
         ms::Identifier getIdentifier() const;
+        TreeNode() = delete;
+        TreeNode(INode*);
         void clearDirty();
         void clearState();
+    private:
+    };
+
+    struct TreeNodeComparer: public std::binary_function<TreeNode, TreeNode, bool>
+    {
+        bool operator()(const TreeNode& lhs, const TreeNode& rhs) const
+        {
+            return lhs.path < rhs.path; 
+        }
     };
 
     struct AnimationRecord : public mu::noncopyable
@@ -229,7 +240,7 @@ private:
     CacheSettings m_cache_settings;
     ISceneEventManager::CallbackKey m_cbkey = 0;
 
-    std::map<INode*, TreeNode> m_node_records;
+    std::map<INode*, TreeNode, TreeNodeComparer> m_node_records;
     std::map<Mtl*, MaterialRecord> m_material_records;
     std::vector<std::future<void>> m_async_tasks;
     std::vector<TriObject*> m_tmp_triobj;

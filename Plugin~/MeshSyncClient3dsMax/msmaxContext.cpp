@@ -57,6 +57,8 @@ static void FeedDeferredCalls()
     ::PostMessage(GetCOREInterface()->GetMAXHWnd(), WM_TRIGGER_CALLBACK, (WPARAM)&FeedDeferredCallsImpl, (LPARAM)nullptr);
 }
 
+msmaxContext::TreeNode::TreeNode(INode* n) : node(n), name(GetNameW(n)), path(GetPath(n)) {
+}
 
 ms::Identifier msmaxContext::TreeNode::getIdentifier() const
 {
@@ -73,6 +75,7 @@ void msmaxContext::TreeNode::clearDirty()
 
     dirty_trans = dirty_geom = false;
 }
+
 
 void msmaxContext::TreeNode::clearState()
 {
@@ -564,7 +567,6 @@ void msmaxContext::updateRecords(bool track_delete)
         old_records.reserve(m_node_records.size());
         for (auto& kvp : m_node_records)
             old_records.push_back({ std::move(kvp.second.path), false });
-        std::sort(old_records.begin(), old_records.end());
     }
 
     //re-construct records
@@ -576,7 +578,6 @@ void msmaxContext::updateRecords(bool track_delete)
     });
 
     // sort nodes by path and assign indices
-    std::sort(nodes.begin(), nodes.end(), [](auto *a, auto *b) { return a->path < b->path; });
     size_t n = nodes.size();
     for (size_t i = 0; i < n; ++i)
         nodes[i]->node_index = (int)i;
@@ -600,13 +601,12 @@ msmaxContext::TreeNode& msmaxContext::getNodeRecord(INode *n)
     auto& ctx = msmaxGetContext();
     ctx.logInfo("msmaxContext::getNodeRecord\n");
 
-    TreeNode& rec = m_node_records[n];
-    if (!rec.node) {
-        rec.node = n;
-        rec.name = GetNameW(n);
-        rec.path = GetPath(n);
+    auto it = m_node_records.find(n);
+    if (it == m_node_records.end()) {
+        m_node_records.insert( std::pair<INode*, TreeNode>(n, TreeNode(n)));
     }
-    return rec;
+
+    return it->second;
 }
 
 std::vector<msmaxContext::TreeNode*> msmaxContext::getNodes(ObjectScope scope)
@@ -637,8 +637,6 @@ std::vector<msmaxContext::TreeNode*> msmaxContext::getNodes(ObjectScope scope)
         break;
     }
 
-    std::sort(ret.begin(), ret.end(),
-        [](auto& a, auto& b) { return a->node_index < b->node_index; });
     return ret;
 }
 
