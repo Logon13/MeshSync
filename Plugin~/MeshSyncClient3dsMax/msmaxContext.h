@@ -154,7 +154,7 @@ public:
 private:
     struct TreeNode : public mu::noncopyable
     {
-        int index = 0;
+        int node_index = 0;
         INode *node = nullptr;
         Object *baseobj = nullptr;
         std::wstring name;

@@ -579,7 +579,7 @@ void msmaxContext::updateRecords(bool track_delete)
     std::sort(nodes.begin(), nodes.end(), [](auto *a, auto *b) { return a->path < b->path; });
     size_t n = nodes.size();
     for (size_t i = 0; i < n; ++i)
-        nodes[i]->index = (int)i;
+        nodes[i]->node_index = (int)i;
 
     if (track_delete) {
         // erase renamed / re-parented objects
@@ -638,7 +638,7 @@ std::vector<msmaxContext::TreeNode*> msmaxContext::getNodes(ObjectScope scope)
     }
 
     std::sort(ret.begin(), ret.end(),
-        [](auto& a, auto& b) { return a->index < b->index; });
+        [](auto& a, auto& b) { return a->node_index < b->node_index; });
     return ret;
 }
 
@@ -1081,7 +1081,7 @@ std::shared_ptr<T> msmaxContext::createEntity(TreeNode& n)
     auto ret = T::create();
     auto& dst = *ret;
     dst.path = n.path;
-    dst.index = n.index;
+    dst.index = n.node_index;
     n.dst = ret;
     return ret;
 }
