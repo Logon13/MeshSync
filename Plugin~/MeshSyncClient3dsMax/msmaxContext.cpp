@@ -544,21 +544,11 @@ void msmaxContext::updateRecords(bool track_delete)
     auto& ctx = msmaxGetContext();
     ctx.logInfo("msmaxContext::updateRecords\n");
 
-    struct ExistRecord
-    {
-        std::string path;
-        bool exists;
-
-        bool operator<(const ExistRecord& v) const { return path < v.path; }
-        bool operator<(const std::string& v) const { return path < v; }
-    };
-
-    std::vector<ExistRecord> old_records;
+    std::set<std::string> old_records;
     if (track_delete) {
         // create path list to detect rename / re-parent 
-        old_records.reserve(m_node_records.size());
         for (auto& kvp : m_node_records)
-            old_records.push_back({ std::move(kvp.second.path), false });
+            old_records.insert(kvp.second.path);
     }
 
     //re-construct records
@@ -575,15 +565,15 @@ void msmaxContext::updateRecords(bool track_delete)
         nodes[i]->node_index = (int)i;
 
     if (track_delete) {
+        //[TODO-sin: 2019-11-25] How do we handle duplicate nodes with the same path ?
         // erase renamed / re-parented objects
         for (auto& kvp : m_node_records) {
-            auto it = std::lower_bound(old_records.begin(), old_records.end(), kvp.second.path);
-            if (it != old_records.end() && it->path == kvp.second.path)
-                it->exists = true;
+            //Keep old records that DO NOT exist anymore.
+            if (old_records.find(kvp.second.path) != old_records.end())
+                old_records.erase(kvp.second.path);
         }
         for (auto& r : old_records) {
-            if (!r.exists)
-                m_entity_manager.erase(r.path);
+            m_entity_manager.erase(r);
         }
     }
 }
