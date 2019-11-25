@@ -60,16 +60,24 @@ static void FeedDeferredCalls()
 
 ms::Identifier msmaxContext::TreeNode::getIdentifier() const
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::TreeNode::getIdentifier\n");
+
     return { path, id };
 }
 
 void msmaxContext::TreeNode::clearDirty()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::TreeNode::clearDirty\n");
+
     dirty_trans = dirty_geom = false;
 }
 
 void msmaxContext::TreeNode::clearState()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::TreeNode::clearState\n");
     dst = nullptr;
 }
 
@@ -144,22 +152,33 @@ void msmaxContext::onNewScene()
 
 void msmaxContext::onSceneUpdated()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onSceneUpdated()\n");
     m_scene_updated = true;
 }
 
 void msmaxContext::onTimeChanged()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onTimeChanged()\n");
+
     if (m_settings.auto_sync)
         m_pending_request = ObjectScope::All;
 }
 
 void msmaxContext::onNodeAdded(INode * n)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onNodeAdded()\n");
+
     m_scene_updated = true;
 }
 
 void msmaxContext::onNodeDeleted(INode * n)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onNodeDeleted()\n");
+
     m_scene_updated = true;
 
     auto it = m_node_records.find(n);
@@ -171,28 +190,41 @@ void msmaxContext::onNodeDeleted(INode * n)
 
 void msmaxContext::onNodeRenamed()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onNodeRenamed()\n");
     m_scene_updated = true;
 }
 
 void msmaxContext::onNodeLinkChanged(INode *n)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onNodeLinkChanged()\n");
     m_scene_updated = true;
 }
 
 void msmaxContext::onNodeUpdated(INode *n)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onNodeUpdated()\n");
+
     auto& rec = getNodeRecord(n);
     m_dirty = rec.dirty_trans = true;
 }
 
 void msmaxContext::onGeometryUpdated(INode *n)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onGeometryUpdated()\n");
+
     auto& rec = getNodeRecord(n);
     m_dirty = rec.dirty_trans = rec.dirty_geom = true;
 }
 
 void msmaxContext::onRepaint()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::onRepaint()\n");
+
     update();
 }
 
@@ -231,6 +263,11 @@ void msmaxContext::wait()
 
 void msmaxContext::update()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::update() Scene Updated: %d, Pending Request: %d, Dirty: %d\n", 
+        m_scene_updated, m_pending_request, m_dirty
+    );
+
     if (m_scene_updated) {
         updateRecords();
         m_scene_updated = false;
@@ -251,6 +288,9 @@ void msmaxContext::update()
 
 bool msmaxContext::sendObjects(ObjectScope scope, bool dirty_all)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::sendObjects\n");
+
     if (m_sender.isExporting())
         return false;
 
@@ -293,6 +333,9 @@ bool msmaxContext::sendObjects(ObjectScope scope, bool dirty_all)
 
 bool msmaxContext::sendMaterials(bool dirty_all)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::sendMaterials\n");
+
     if (m_sender.isExporting())
         return false;
 
@@ -311,6 +354,9 @@ bool msmaxContext::sendMaterials(bool dirty_all)
 
 bool msmaxContext::sendAnimations(ObjectScope scope)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::sendAnimations\n");
+
     m_sender.wait();
     m_settings.validate();
 
@@ -367,6 +413,9 @@ static int ExceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS *ep)
 
 bool msmaxContext::exportCache(const CacheSettings& cache_settings)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::exportCache\n");
+
     const float frame_rate = (float)::GetFrameRate();
     const float frame_step = std::max(cache_settings.frame_step, 0.1f);
 
@@ -497,6 +546,9 @@ bool msmaxContext::recvScene()
 
 void msmaxContext::updateRecords(bool track_delete)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::updateRecords\n");
+
     struct ExistRecord
     {
         std::string path;
@@ -515,7 +567,7 @@ void msmaxContext::updateRecords(bool track_delete)
         std::sort(old_records.begin(), old_records.end());
     }
 
-    // re-construct records
+    //re-construct records
     std::vector<TreeNode*> nodes;
     nodes.reserve(m_node_records.size());
     m_node_records.clear();
@@ -545,7 +597,10 @@ void msmaxContext::updateRecords(bool track_delete)
 
 msmaxContext::TreeNode& msmaxContext::getNodeRecord(INode *n)
 {
-    auto& rec = m_node_records[n];
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::getNodeRecord\n");
+
+    TreeNode& rec = m_node_records[n];
     if (!rec.node) {
         rec.node = n;
         rec.name = GetNameW(n);
@@ -556,6 +611,9 @@ msmaxContext::TreeNode& msmaxContext::getNodeRecord(INode *n)
 
 std::vector<msmaxContext::TreeNode*> msmaxContext::getNodes(ObjectScope scope)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::getNodes\n");
+
     std::vector<TreeNode*> ret;
     ret.reserve(m_node_records.size());
 
@@ -586,6 +644,9 @@ std::vector<msmaxContext::TreeNode*> msmaxContext::getNodes(ObjectScope scope)
 
 void msmaxContext::kickAsyncExport()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::kickAsyncExport\n");
+
     for (auto& t : m_async_tasks)
         t.wait();
     m_async_tasks.clear();
@@ -642,11 +703,17 @@ void msmaxContext::kickAsyncExport()
 
 int msmaxContext::exportTexture(const std::string & path, ms::TextureType type)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::exportTexture\n");
+
     return m_texture_manager.addFile(path, type);
 }
 
 void msmaxContext::exportMaterials()
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::exportMaterials\n");
+
     auto *mtllib = GetCOREInterface()->GetSceneMtls();
     int count = mtllib->Count();
 
@@ -732,6 +799,9 @@ void msmaxContext::exportMaterials()
 
 ms::TransformPtr msmaxContext::exportObject(INode *n, bool tip)
 {
+    auto& ctx = msmaxGetContext();
+    ctx.logInfo("msmaxContext::exportObjectMaterials\n");
+
     if (!n || !n->GetObjectRef())
         return nullptr;
 
