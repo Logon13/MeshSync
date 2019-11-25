@@ -225,9 +225,6 @@ void msmaxContext::onGeometryUpdated(INode *n)
 
 void msmaxContext::onRepaint()
 {
-    auto& ctx = msmaxGetContext();
-    ctx.logInfo("msmaxContext::onRepaint()\n");
-
     update();
 }
 
@@ -266,11 +263,6 @@ void msmaxContext::wait()
 
 void msmaxContext::update()
 {
-    auto& ctx = msmaxGetContext();
-    ctx.logInfo("msmaxContext::update() Scene Updated: %d, Pending Request: %d, Dirty: %d\n", 
-        m_scene_updated, m_pending_request, m_dirty
-    );
-
     if (m_scene_updated) {
         updateRecords();
         m_scene_updated = false;
@@ -598,9 +590,6 @@ void msmaxContext::updateRecords(bool track_delete)
 
 msmaxContext::TreeNode& msmaxContext::getNodeRecord(INode *n)
 {
-    auto& ctx = msmaxGetContext();
-    ctx.logInfo("msmaxContext::getNodeRecord\n");
-
     auto it = m_node_records.find(n);
     if (it == m_node_records.end()) {
         m_node_records.insert( std::pair<INode*, TreeNode>(n, TreeNode(n)));
